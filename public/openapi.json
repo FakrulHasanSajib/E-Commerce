@@ -1,0 +1,170 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "LaraShop E-Commerce REST API",
+    "description": "Production API specification for LaraShop E-Commerce Platform (Modules 1 - 20).",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000/api",
+      "description": "Local Development Server"
+    },
+    {
+      "url": "https://api.larashop.com/api",
+      "description": "Production Server"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "System Health Check Uptime Monitoring Endpoint",
+        "responses": {
+          "200": {
+            "description": "System Healthy",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "healthy",
+                  "timestamp": "2026-08-09T10:59:48+06:00",
+                  "services": { "database": "ok", "disk": "ok", "redis": "ok", "queue": "ok" },
+                  "is_healthy": true
+                }
+              }
+            }
+          },
+          "503": { "description": "System Unhealthy / Core Dependency Failure" }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "User Authentication Login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string", "example": "customer@larashop.test" },
+                  "password": { "type": "string", "example": "password123" }
+                },
+                "required": ["email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login Successful",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Login successful",
+                  "token": "1|sanctum_token_string_here",
+                  "user": { "id": 1, "name": "Customer User", "email": "customer@larashop.test" }
+                }
+              }
+            }
+          },
+          "401": { "description": "Invalid Credentials" },
+          "403": {
+            "description": "2FA Challenge Required (Admin)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Two-factor authentication code required.",
+                  "requires_2fa": true,
+                  "user_id": 1
+                }
+              }
+            }
+          },
+          "429": { "description": "Too Many Login Attempts" }
+        }
+      }
+    },
+    "/products": {
+      "get": {
+        "summary": "List Filtered and Paginated Products",
+        "parameters": [
+          { "name": "category", "in": "query", "schema": { "type": "string" } },
+          { "name": "brand", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated Product Array",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "id": 10,
+                      "name": "Wireless Noise-Canceling Headphones",
+                      "slug": "wireless-noise-canceling-headphones",
+                      "price": "3999.00",
+                      "stock_quantity": 45
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/checkout": {
+      "post": {
+        "summary": "Place E-Commerce Order",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "customer_name": { "type": "string" },
+                  "customer_email": { "type": "string" },
+                  "customer_phone": { "type": "string" },
+                  "shipping_address": { "type": "string" },
+                  "shipping_method_id": { "type": "integer" },
+                  "payment_method": { "type": "string" },
+                  "coupon_code": { "type": "string" },
+                  "gift_card_code": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Order Created Successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Order placed successfully",
+                  "order_number": "ORD-20260809-9821",
+                  "status": "pending",
+                  "payment_status": "unpaid",
+                  "grand_total": "6758.20"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Sanctum Token"
+      }
+    }
+  }
+}
